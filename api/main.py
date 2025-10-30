@@ -29,3 +29,30 @@ try:
 except Exception as e:
     print(f"[MAIN] could not load index/chunks yet: {e}")
 
+# retriever needs successful store so we init after and llm too for clarity
+retriever = Retriever(store=store, embedder=embedder, top_k=5)
+llm = LLMProvider()
+
+# expose RAG pipepline thorugh HTTP so me or anyone cna ask questions to it from anywhere
+# adding metadata onto the API, makes it clearer for it to be used in the future
+# this will appear in swagger ui in /docs and /openai.json 
+app = FastAPI(title="MegaMind-Rag", summary="Context specific response using RAG",
+               description="An api which gives context specific" \
+" response for specialized domains using retrieval augmented generation in unison " \
+"with modern GenAI", version="1.618")
+
+class AskRequest(BaseModel):
+    # here we're defining how data clients must send in POST requests
+    question: str
+
+# define a GET endpoint
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
+@app.get("/ask")
+def ask(request: AskRequest):
+    response = answer_question(question=request, retriever=retriever, llm=llm)
+    return response
+# fast api turns JSON request into Python object of type AskRequest
+# the returned dictionary is returned as a HTTP response, then FastAPI converts it to JSON
