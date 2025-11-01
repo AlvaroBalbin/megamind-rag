@@ -6,3 +6,4 @@ faiss-cpu
 openai
 fastapi
 streamlit
+python-dotenv

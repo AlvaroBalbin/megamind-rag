@@ -1,0 +1,16 @@
+services:
+  rag-api: # name of service (container)
+  build:
+  container_name: megarag-api
+  ports:
+    - "8000:8000"
+  # pass envionrment variables through
+  envionrment:
+  - PYTHONBUFFERED=1 # we want to see logs live not dumped after buffer is full or program end
+  - OPENAI_API_KEY$={OPENAI_API_KEY}
+  - MODEL_NAME=gpt-4o-mini
+  - TOP_K=5
+
+  volume: 
+  - ./data:/app/data
+  - ./docs:/app/docs
