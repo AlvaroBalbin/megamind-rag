@@ -7,13 +7,14 @@
                                                                             # read for retrieval
 
 from pathlib import Path
-from tqdm import tdqm
+from tqdm import tqdm
 import numpy as np
 
 from .loaders import load_documents
 from .chunking import chunk_text
 from .embedder import Embedder
 from .store import save_index_chunk
+
 
 def run_ingest(docs_dir: str = "docs", out_dir: str = "data"):
     embedder = Embedder() # initialize instance of the class
@@ -57,16 +58,6 @@ def run_ingest(docs_dir: str = "docs", out_dir: str = "data"):
     # basically glue everything into a 2D array
     stacked_mtx = np.vstack(all_vectors).astype("float32")
     save_index_chunk(stacked_mtx, all_chunks_records, out_dir=out_dir)
-
-    
-
-
-
-
-
-
-
-    
 
 if __name__ == "__main__": # when running file do ingest.py not when importing
     run_ingest()

@@ -61,6 +61,7 @@ class StoreKnowledge:
             )
         return results
     
+    @staticmethod
     def save_index_chunk(vectors: np.ndarray, chunk_records: list[dict], out_dir: str="data"):
         # safe check if directory exists
         out = Path(out_dir)
@@ -82,9 +83,9 @@ class StoreKnowledge:
                 # dont ensure ascii we might have different languages or math/greek letters
                 f.write(json.dump(record, ensure_ascii=False)) 
 
-
-
-
+# expose the class so it can be accessed in ingest.py
+def save_index_chunk(vectors, chunk_records, out_dir: str = "data"):
+    return StoreKnowledge.save_index_chunk(vectors, chunk_records, out_dir)
 
 
 
