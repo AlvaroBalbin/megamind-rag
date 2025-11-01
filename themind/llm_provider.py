@@ -8,6 +8,7 @@
 # havent decided what LLM to use
 
 import os 
+import requests
 
 class LLMProvider:
     """thin wrapper to swap out easily different LLMs"""
@@ -24,7 +25,6 @@ class LLMProvider:
     def generate_answer(self, prompt: str) -> str:
         """call actual LLM here, send a prompt to the API, wait for a response,
         extract the models answer from JSON that is returned, return it as plain text"""
-        return "LLM output placeholder"
     
         # api endpoint where we'll send the question
         url = f"{self.base_url}/chat/completions"
