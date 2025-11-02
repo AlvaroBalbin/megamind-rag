@@ -11,7 +11,7 @@ def build_context_block(results: list[dict]) -> str:
     lines = []
     for i, r in enumerate(results, 1):
         lines.append(
-            f"[i] (Source: {r["doc_name"]} #{r["chunk_id"]})\n {r["text"]}\n)"
+            f"[i] (Source: {r['doc_name']} #{r['chunk_id']})\n {r['text']}\n"
         )
 
     return "\n".join(lines)

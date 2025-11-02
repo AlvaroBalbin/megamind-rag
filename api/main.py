@@ -6,6 +6,7 @@
 
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 
 from themind.embedder import Embedder
@@ -29,7 +30,7 @@ try:
     store.load()
     print(f"[MAIN] loaded chunks and index")
 except Exception as e:
-    raise RuntimeError(f"[MAIN] could not load index/chunks yet: {e}")
+    print(f"[MAIN] could not load index/chunks yet: {e}")
 
 # retriever needs successful store so we init after and llm too for clarity
 retriever = Retriever(store=store, embedder=embedder, top_k=5)
@@ -42,6 +43,15 @@ app = FastAPI(title="MegaMind-Rag", summary="Context specific response using RAG
                description="An api which gives context specific" \
 " response for specialized domains using retrieval augmented generation in unison " \
 "with modern GenAI", version="1.618")
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],          # who can access your API
+    allow_credentials=True,       # allow cookies/auth headers
+    allow_methods=["*"],          # allow all HTTP verbs (GET, POST, etc.)
+    allow_headers=["*"],          # allow all request headers
+)
 
 class AskRequest(BaseModel):
     # here we're defining how data clients must send in POST requests
