@@ -94,24 +94,35 @@ if st.button("Ask") and question.strip(): # if question was empty all whitespace
     },
     timeout=10,
 )
-    
+    # backend failed, lets see what it said
+    if response.status_code != 200:
+        st.error(f"backend returned {response.status_code}")
+        st.code(response.text)
+    # backend ok but json, so can you show raw
+    elif "application/json" not in response.headers.get("content-type", ""):
+        st.error("backend did not return json")
+        st.code(response.text)
+    else:
+        # this was a good path
+        data = response.json() # parse the raw response body as JSON and get python dict object
 
-    data = response.json() # parse the raw response body as JSON and get python dict object
+        # write the section for answer and default it to empty
+        st.subheader("Answer")
+        st.write(data.get("answer", ""))
 
-    # write the section for answer and default it to empty
-    st.subheader("Answer")
-    st.write(data.get("answer", ""))
+        # write the sources section 
+        st.subheader("Sources")
+        for src in data.get("sources", []):
+            # since we are currently using L2 distance a lower score -> means closer meaning
+            # if we were to use cosine similarity a higher score would be better
+            score = src.get("score", None)
+            if score is not None:
+                st.write(f"{src['doc_name']}#{src['chunk_id']} (score={round(score,3)})")
+            else:
+                st.write(f"{src['doc_name']}#{src['chunk_id']}")
 
-    # write the sources section 
-    st.subheader("Sources")
-    for src in data.get("sources", []):
-        # since we are currently using L2 distance a lower score -> means closer meaning
-        # if we were to use cosine similarity a higher score would be better
-        score = src.get("score", None)
-        if score is not None:
-            st.write(f"{src['doc_name']}#{src['chunk_id']} (score={round(score,3)})")
-        else:
-            st.write(f"{src['doc_name']}#{src['chunk_id']}")
+        # if we dont know the latency just put ?
+        st.caption(f"Latency: {data.get('latency_ms', '?')}ms")
 
-    # if we dont know the latency just put ?
-    st.caption(f"Latency: {data.get('latency_ms', '?')}ms")
+
+        
