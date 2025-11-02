@@ -6,8 +6,7 @@
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from dotenv import load_dotenv
-load_dotenv()
+
 
 from themind.embedder import Embedder
 from themind.store import StoreKnowledge
