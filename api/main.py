@@ -30,26 +30,46 @@ session = boto3.session.Session(
 )
 s3 = session.client("s3")
 
-# on startup get the global components (dont gotta do them later)
-embedder = Embedder()
-store = StoreKnowledge(index_path="data/faiss.index", chunks_path="data/chunks.jsonl")
+# on startup get the global components (set as None, dont eat the ram away)
+embedder = None
+store = None
+retriever = None
+llm = None
+
+# lazy loadings more effective
+def get_pipeline():
+    global embedder, store, retriever, llm
+    if embedder is None:
+        embedder = Embedder()
+
+    if store is None:
+        # use env so dont try to read MASSIVE local files
+        index_dir = os.getenv("INDEX_DIR", "data")
+        s = StoreKnowledge(
+            index_path=f"{index_dir}/faiss.index",
+            chunks_path=f"{index_dir}/chunks.jsonl",
+        )
+
+        try:
+            s.load()
+            print("[MAIN] store loaded in a lazy way")
+        except Exception as e:
+            print(f"[main] store not loaded yet: {e}")
+        store = s
+
+        if retriever is None:
+            retriever = Retriever(store=store, embedder=embedder, top_k=3)
+
+        if llm is None:
+            llm = LLMProvider()
+
+        return retriever, llm
 
 """you load your embedding model ONCE not every request
 also create StoreKnowledge object pointing to your saved faiss index and metadata
 and IMPORTANTLY:
     dont recreate everything for each request, load once per memory.
 """
-
-# load stuff if it already exists if not (fresh project) just call a little error
-try:
-    store.load()
-    print(f"[MAIN] loaded chunks and index")
-except Exception as e:
-    print(f"[MAIN] could not load index/chunks yet: {e}")
-
-# retriever needs successful store so we init after and llm too for clarity
-retriever = Retriever(store=store, embedder=embedder, top_k=5)
-llm = LLMProvider()
 
 # expose RAG pipepline thorugh HTTP so me or anyone cna ask questions to it from anywhere
 # adding metadata onto the API, makes it clearer for it to be used in the future
@@ -81,7 +101,7 @@ def health_check():
 
 @app.post("/ask")
 def ask(request: AskRequest):
-    env = request.env 
+    retriever, llm = get_pipeline()
     response = answer_question(question=request.question, retriever=retriever, llm=llm)
     return response
 # fast api turns JSON request into Python object of type AskRequest
