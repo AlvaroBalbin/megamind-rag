@@ -1,0 +1,9 @@
+streamlit
+sentence-transformers
+torch
+openai
+pypdf
+numpy
+python-dotenv
+boto3
+

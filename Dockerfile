@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
 
     # put the source into destination ie working directory /app
     # do requirements.txt before megamind-rag so any change there doesnt make us rerun download everytime
-COPY requirements.txt . 
+COPY requirements-api.txt ./requirements.txt
 # --no-cache-dir keeps file small cause it doesnt keep pip caches
 RUN pip install --no-cache-dir -r requirements.txt
 
