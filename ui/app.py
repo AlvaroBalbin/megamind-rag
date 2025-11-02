@@ -13,8 +13,11 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT_DIR))
 
 BACKEND_URL = (
-    st.secrets.get("BACKEND_URL" or "https://megamind-rag.onrender.com") # extra fallback
+    st.secrets.get("BACKEND_URL")
+    or os.getenv("BACKEND_URL")
+    or "https://megamind-rag.onrender.com"
 )
+
 
 st.set_page_config(page_title="MegaMind-Rag", page_icon=None, layout="centered") # dont have a page icon yet
 st.title("MegaMind-Rag: the genie in the bottle")
@@ -62,10 +65,14 @@ question = st.text_input(label="Ask a question:")
 
 if st.button("Ask") and question.strip(): # if question was empty all whitespace is removed and it returns False
     response = requests.post(
-        "http://127.0.0.1:8000/ask", # we ll keep this for now before we launch -> testing
-        json={"question": question.strip()},
-        timeout=10, # reduce this if requests work well consistently
-    )
+    f"{BACKEND_URL}/ask",
+    json={
+        "question": question.strip(),
+        "user_id": "default_user",
+        "env": APP_ENV,
+    },
+    timeout=10,
+)
 
     data = response.json() # parse the raw response body as JSON and get python dict object
 

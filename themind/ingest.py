@@ -7,7 +7,6 @@
                                                                             # read for retrieval
 
 from pathlib import Path
-from tqdm import tqdm
 import numpy as np
 
 from .loaders import load_documents
@@ -32,7 +31,7 @@ def run_ingest(docs_dir: str = "docs", out_dir: str = "data"):
     all_chunks_records: list[dict] = [] # stores text metadata and text
     all_vectors: list[np.ndarray] = [] # corresponding numeric embeddings
 
-    for doc in load_documents(docs_dir):
+    for doc in docs:
         # the generator is going to "run" as many documents that are uploaded
         doc_name = doc["doc_name"]
         raw_text = doc["text"]
@@ -51,14 +50,13 @@ def run_ingest(docs_dir: str = "docs", out_dir: str = "data"):
         vectors = embedder.encode(texts) # on current model you should (get no_chunks, 384)
 
         # store metadata now that we've embedded
-        for i, chunk in enumerate(chunks):
-            record = {
+        for chunk in chunks:
+            all_chunks_records.append({
                 "doc_name": doc_name,
                 "chunk_id": chunk["chunk_id"],
                 "text": chunk["text"],
-            }
-            # store metadata for every chunk where it came from(document) and its text
-            all_chunks_records.append(record)
+            })
+    
         # store embedding data as a vector into all_vectors
         all_vectors.append(vectors)
 
