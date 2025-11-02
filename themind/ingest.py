@@ -19,6 +19,16 @@ from .store import save_index_chunk
 def run_ingest(docs_dir: str = "docs", out_dir: str = "data"):
     embedder = Embedder() # initialize instance of the class
 
+    docs = list(load_documents(docs_dir)) # get the generator here and not in the loop
+    # so the generator does not get exhausted and return nothing
+
+    if not docs:
+        print(f"[ingest] no documents found in {docs_dir}, please add files")
+        return
+    
+    for doc in docs:
+        print(f"[ingest] loaded {doc['doc_name']} → {len(doc['text'])} characters")
+
     all_chunks_records: list[dict] = [] # stores text metadata and text
     all_vectors: list[np.ndarray] = [] # corresponding numeric embeddings
 
@@ -47,8 +57,8 @@ def run_ingest(docs_dir: str = "docs", out_dir: str = "data"):
                 "chunk_id": chunk["chunk_id"],
                 "text": chunk["text"],
             }
-        # store metadata for every chunk where it came from(document) and its text
-        all_chunks_records.append(record)
+            # store metadata for every chunk where it came from(document) and its text
+            all_chunks_records.append(record)
         # store embedding data as a vector into all_vectors
         all_vectors.append(vectors)
 
@@ -59,5 +69,9 @@ def run_ingest(docs_dir: str = "docs", out_dir: str = "data"):
     stacked_mtx = np.vstack(all_vectors).astype("float32")
     save_index_chunk(stacked_mtx, all_chunks_records, out_dir=out_dir)
 
+
 if __name__ == "__main__": # when running file do ingest.py not when importing
+    print("ingest starting")
     run_ingest()
+    # confirmation it ran properly
+    print("done!")

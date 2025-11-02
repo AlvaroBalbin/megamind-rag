@@ -7,7 +7,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from dotenv import load_dotenv
-load_dotenv
+load_dotenv()
 
 from themind.embedder import Embedder
 from themind.store import StoreKnowledge
@@ -28,8 +28,9 @@ and IMPORTANTLY:
 # load stuff if it already exists if not (fresh project) just call a little error
 try:
     store.load()
+    print(f"[MAIN] loaded chunks and index")
 except Exception as e:
-    print(f"[MAIN] could not load index/chunks yet: {e}")
+    raise RuntimeError(f"[MAIN] could not load index/chunks yet: {e}")
 
 # retriever needs successful store so we init after and llm too for clarity
 retriever = Retriever(store=store, embedder=embedder, top_k=5)
@@ -52,9 +53,9 @@ class AskRequest(BaseModel):
 def health_check():
     return {"status": "healthy"}
 
-@app.get("/ask")
+@app.post("/ask")
 def ask(request: AskRequest):
-    response = answer_question(question=request, retriever=retriever, llm=llm)
+    response = answer_question(question=request.question, retriever=retriever, llm=llm)
     return response
 # fast api turns JSON request into Python object of type AskRequest
 # the returned dictionary is returned as a HTTP response, then FastAPI converts it to JSON

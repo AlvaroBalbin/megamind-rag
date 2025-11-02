@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from pypdf import PdfReader
 
+ROOT_DIR = Path(__file__).resolve().parent.parent
+
 def load_text_file(path: Path)-> str:
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         return f.read()
@@ -17,15 +19,15 @@ def load_documents(docs_dir: str = "docs"):
     """
     goes into docs_dir and get (doc_name, text)
     """
-    docs_dir = Path(docs_dir)
+    docs_dir = (ROOT_DIR / docs_dir).resolve()
     for p in docs_dir.rglob("*"):
-        if p.is_dir:
+        if p.is_dir():
             continue
         ext = p.suffix.lower() # get suffix in lowercase easier to work with
         if ext in [".md", ".txt"]:
             text = load_text_file(p)
         elif ext in [".pdf"]:
-            text = load_pdf_file
+            text = load_pdf_file(p)
         else:
             # future imports will be available at some point lol
             continue

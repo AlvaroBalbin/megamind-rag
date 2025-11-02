@@ -21,9 +21,15 @@ class StoreKnowledge:
         """load faiss index and then chunk metadata"""
         self.index = faiss.read_index(str(self.index_path))
 
+        chunks: list[dict] = []
         # now chunk metadata
-        with open(self.chunks_path, "r") as f:
-            self.chunks = None # do this later IMPORTANT
+        with open(self.chunks_path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                chunks.append(json.loads(line)) # deserialization
+            self.chunks = chunks
 
     # currently only using one query
     def query(self, query_vector: np.ndarray, top_k: int = 5) -> list[dict]:
@@ -46,9 +52,12 @@ class StoreKnowledge:
         # flatten arrays out so we only got a 1D array instead of 2D array
         distances = distances[0]; indices = indices[0]
 
+        if self.chunks is None:
+            raise RuntimeError("Store is empty rerun data/")
+    
         results = []
         for distance, idx in zip(distances, indices):
-            if idx < 0 or idx > len(self.chunks): # Faiss might return error if top-k is not found
+            if idx < 0 or idx >= len(self.chunks): # Faiss might return error if top-k is not found
                 continue # skip unwanted indices
             metadata = self.chunks[idx]
             results.append(
@@ -72,16 +81,17 @@ class StoreKnowledge:
         # faiss index a data structure optimized for searching nearest neighbour in vector space
         index = faiss.IndexFlatL2(dim) # simple and highly accurate -> for a small dataset it shouldnt be too slow
         # print("index.is_trained") -> used to debug
-        index.add(chunk_records)
+        index.add(vectors)
 
         # write this binary mass into output
         faiss.write_index(index, str(out / "faiss.index"))
 
         # each line represents on chunk of text + its metadata(doc_name and id)
-        with open(out / "chunks.jsonl", "w") as f:
+        # the errors="replace" lets us replace really weird chars(happens in these kind of docs)
+        with open(out / "chunks.jsonl", "w", encoding="utf-8", errors="replace") as f:
             for record in chunk_records:
                 # dont ensure ascii we might have different languages or math/greek letters
-                f.write(json.dump(record, ensure_ascii=False)) 
+                f.write(json.dumps(record, ensure_ascii=False) + "\n") 
 
 # expose the class so it can be accessed in ingest.py
 def save_index_chunk(vectors, chunk_records, out_dir: str = "data"):

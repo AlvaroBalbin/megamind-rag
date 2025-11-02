@@ -40,7 +40,7 @@ def answer_question(question: str, retriever: Retriever, llm: LLMProvider) -> di
     results = retriever.retrieve(question)
     prompt = build_prompt(question, results)
     answer_text = llm.generate_answer(prompt)
-    latency = int((time.perf_counter - time_start) * 1000) # convert seconds to milliseconds
+    latency = int((time.perf_counter() - time_start) * 1000) # convert seconds to milliseconds
 
     # capture all the sources into a nice list
     sources = [{

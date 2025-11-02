@@ -10,6 +10,7 @@
 import os 
 import requests
 
+
 class LLMProvider:
     """thin wrapper to swap out easily different LLMs"""
 
@@ -18,20 +19,20 @@ class LLMProvider:
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         # call client and other stuff
         if self.api_key is None:
-            raise ValueError("OPEN_API_KEY is not set in this environment")
+            raise ValueError("OPENAI_API_KEY is not set in this environment")
         
-        self.base_url = base_url or os.getenv("OPEN_API_KEY", "https://api.openai.com")
+        self.base_url = base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 
     def generate_answer(self, prompt: str) -> str:
         """call actual LLM here, send a prompt to the API, wait for a response,
         extract the models answer from JSON that is returned, return it as plain text"""
     
         # api endpoint where we'll send the question
-        url = f"{self.base_url}/chat/completions"
+        url = f"{self.base_url}/chat/completions"  
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-type": "applicaton/json",
+            "Content-Type": "application/json",
         }
 
         # defining what we send
@@ -39,7 +40,11 @@ class LLMProvider:
             "model": self.model_name,
             "messages": [ # might add other parameters like max_output_token or reasoning
                 {
-                "role": "developer",
+                    "role": "system", # the system role sets behaviour and instructions
+                    "content": "Helpful assistant that answers clearly using the provided context"
+                },
+                {
+                "role": "user", # what you re asking
                 "content": prompt, 
                 },
             ],
@@ -57,5 +62,5 @@ class LLMProvider:
         try:
             return data["choices"][0]["message"]["content"].strip() # usually there only one choice anyway
         except Exception as e:
-            return "[LLM Provider] error occured in loading text: e"
+            return f"[LLM Provider] error occured in loading text: {e}"
     
