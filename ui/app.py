@@ -12,6 +12,10 @@ from datetime import datetime, timezone
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT_DIR))
 
+BACKEND_URL = (
+    st.secrets.get("BACKEND_URL" or "https://megamind-rag.onrender.com") # extra fallback
+)
+
 st.set_page_config(page_title="MegaMind-Rag", page_icon=None, layout="centered") # dont have a page icon yet
 st.title("MegaMind-Rag: the genie in the bottle")
 
@@ -41,7 +45,7 @@ if uploaded_file is not None:
     s3.upload_fileobj(uploaded_file, BUCKET, key)
     st.success(f"Uploaded to S3: {key}")
 
-    backend_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+    backend_url = BACKEND_URL
     try:
         requests.post(
         f"{backend_url}/ingest",
