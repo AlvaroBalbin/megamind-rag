@@ -24,7 +24,6 @@ session = boto3.session.Session(
 s3 = session.client("s3")
 BUCKET = st.secrets["S3_BUCKET_NAME"]
 APP_ENV = st.secrets["APP_ENV"]
-
 st.subheader("Upload documents")
 uploaded_file = st.file_uploader("Drop PDF / MD / TXT ",
     type=['pdf', 'md', 'txt'],)
