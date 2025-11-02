@@ -57,13 +57,13 @@ def get_pipeline():
             print(f"[main] store not loaded yet: {e}")
         store = s
 
-        if retriever is None:
+    if retriever is None:
             retriever = Retriever(store=store, embedder=embedder, top_k=3)
 
-        if llm is None:
+    if llm is None:
             llm = LLMProvider()
 
-        return retriever, llm
+    return retriever, llm
 
 """you load your embedding model ONCE not every request
 also create StoreKnowledge object pointing to your saved faiss index and metadata
@@ -109,7 +109,7 @@ def ask(request: AskRequest):
 
 @app.post("/ingest")
 def ingest_user_docs(request: AskRequest):
-    env = request.env
+    env = request.env or "prod"
     prefix = f"{env}/users/{request.user_id}/docs/"
 
     objects: list[dict] = []
@@ -144,6 +144,23 @@ def ingest_user_docs(request: AskRequest):
         os.makedirs(tmp_out_dir, exist_ok=True)
 
         ingest.run_ingest(docs_dir=tmp_docs_dir, out_dir=tmp_out_dir)
+
+        # copy the information to permanent memory
+        perm_direct = "data"
+        os.makedirs(perm_direct, exist_ok=True)
+        for filename in os.listdir(tmp_docs_dir):
+            src = os.path.join(tmp_docs_dir, filename)
+            dest = os.path.join(perm_direct, filename)
+            with open(src, "rb") as filesource, open(dest, "wb") as filedest:
+                filedest.write(filesource.read())
+
+        global store, retriever
+        store = StoreKnowledge(
+            index_path=f"{perm_direct}/faiss.index",
+            chunks_path=f"{perm_direct}/chunks.jsonl",
+        )
+        store.load() # load function
+        retriever = Retriever(store=store, embedder=embedder, top_k=3)
 
     return {"status": "ok", "message": f"ingestion completed for {request.user_id}"}
 
