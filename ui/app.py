@@ -47,8 +47,8 @@ if uploaded_files is not None:
         key = f"{APP_ENV}/users/{user_id}/docs/{ts}-{uploaded_file.name}"
 
     
-    s3.upload_fileobj(uploaded_file, BUCKET, key)
-    st.success(f"Uploaded to S3: {key}")
+        s3.upload_fileobj(uploaded_file, BUCKET, key)
+        st.success(f"Uploaded to S3: {key}")
 
 st.caption(f"Indexed files: {st.session_state.indexed_files}")
 
