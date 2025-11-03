@@ -51,19 +51,19 @@ if uploaded_file is not None:
 
 st.caption(f"Indexed files: {st.session_state.indexed_files}")
 
-st.button("Ingest docs from the S3")
-try:
-    r = requests.post(
-        f"{BACKEND_URL}/ingest",
-        json={"user_id": user_id, "env": APP_ENV},
-        timeout=30,
-    )
-    if r.ok:
-        st.success("Ingestion triggered on backend ✅")
-    else:
-        st.error(f"Ingest failed: {r.status_code} {r.text}")
-except Exception as e:
-    st.error(f"Could not reach backend: {e}")
+if st.button("Ingest docs from the S3"):
+    try:
+        r = requests.post(
+            f"{BACKEND_URL}/ingest",
+            json={"user_id": user_id, "env": APP_ENV},
+            timeout=30,
+        )
+        if r.ok:
+            st.success("Ingestion triggered on backend")
+        else:
+            st.error(f"Ingest failed: {r.status_code} {r.text}")
+    except Exception as e:
+        st.error(f"Could not reach backend: {e}")
     
 
 st.subheader("S3 objects for this user")
