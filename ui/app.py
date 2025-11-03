@@ -43,7 +43,8 @@ if "indexed_files" not in st.session_state: # mini dictionary by streamlit to re
 if uploaded_file is not None:
     # save file to docs
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    key = f"{APP_ENV}/users/{user_id}/docs/{ts}-{uploaded_file.name}"
+    for i in len(uploaded_file):
+        key = f"{APP_ENV}/users/{user_id}/docs/{ts}-{uploaded_file[i].name}"
 
     
     s3.upload_fileobj(uploaded_file, BUCKET, key)
