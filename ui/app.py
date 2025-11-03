@@ -56,7 +56,7 @@ if st.button("Ingest docs from the S3"):
         r = requests.post(
             f"{BACKEND_URL}/ingest",
             json={"user_id": user_id, "env": APP_ENV},
-            timeout=30,
+            timeout=300, # gave loads of time since render is garbage on free version
         )
         if r.ok:
             st.success("Ingestion triggered on backend")
@@ -85,6 +85,17 @@ with st.expander("Docs in S3", expanded=False):
         for key in docs:
             st.write("-", key)
 
+    select = st.multiselect("Select docs to delete", docs, key="delete_docs_select")
+    if st.button("Delete selected docs", type="secondary"):
+        if select:
+            s3.delete_objects(
+                    Bucket=BUCKET,
+                    Delete={"Objects": [{"Key": k} for k in select]}
+            )
+            st.success(f"Deleted {len(select)} doc(s). Refresh the page to see the changes.")
+        else:
+            st.info("Pick at least one object.")
+
 with st.expander("index files in S3", expanded=False):
     idx_resp = s3.list_objects_v2(Bucket=BUCKET, Prefix=indexes_prefix)
     idxs = [
@@ -97,6 +108,17 @@ with st.expander("index files in S3", expanded=False):
     else:
         for key in idxs:
             st.write("-", key)
+
+    select_idx = st.multiselect("Select index files to delete", idxs, key="del_index_sel")
+    if st.button("Delete selected index files", type="secondary"):
+        if select_idx:
+            s3.delete_objects(
+                Bucket=BUCKET,
+                Delete={"Objects": [{"Key": k} for k in select_idx]}
+            )
+            st.success(f"Deleted {len(select_idx)} index file(s). Refresh to see the new updated changes.")
+        else:
+            st.info("Pick at least one object.")
 
 # place a widget to input your question
 question = st.text_input(label="Ask a question:")
