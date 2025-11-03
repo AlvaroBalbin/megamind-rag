@@ -8,6 +8,7 @@ import sys
 import boto3
 from pathlib import Path
 from datetime import datetime, timezone
+from fastapi import HTTPException
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT_DIR))
@@ -49,14 +50,20 @@ if uploaded_file is not None:
     st.success(f"Uploaded to S3: {key}")
 
     backend_url = BACKEND_URL
+    r = None
     try:
-        requests.post(
-        f"{backend_url}/ingest",
-        json={"user_id": user_id, "env": APP_ENV},
-        timeout=30,
+        r = requests.post(
+            f"{BACKEND_URL}/ingest",
+            json={"user_id": user_id, "env": APP_ENV},
+            timeout=30,
         )
+        if not r.ok:
+            st.error(f"Ingest failed: {r.status_code} {r.text}")
+        else:
+            st.success("Ingest triggered on backend")
     except Exception as e:
-        st.warning("Could not connect to backend for ingestion")
+        st.warning(f"Could not connect to backend for ingestion: {e}")
+
 
 st.caption(f"Indexed files: {st.session_state.indexed_files}")
 
@@ -68,6 +75,12 @@ indexes_prefix = f"{APP_ENV}/users/{user_id}/indexes/"
 # list docs
 docs_resp = s3.list_objects_v2(Bucket=BUCKET, Prefix=docs_prefix)
 docs = [obj["Key"] for obj in docs_resp.get("Contents", []) if not obj["Key"].endswith("/")]
+contents = docs_resp.get("Contents", [])
+if not contents:
+    raise HTTPException(
+        status_code=404,
+        detail=f"no index found for user: {user_id}, prefix:{docs_prefix}"
+    )
 
 st.write("Docs in S3:")
 for key in docs:

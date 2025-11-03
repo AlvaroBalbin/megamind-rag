@@ -99,6 +99,11 @@ class AskRequest(BaseModel):
     user_id: str
     env: str = None
 
+class IngestRequest(BaseModel):
+    user_id: str
+    env: str | None = None
+
+
 # define a GET endpoint
 @app.get("/health")
 def health_check():
@@ -114,7 +119,7 @@ def ask(request: AskRequest):
 # the returned dictionary is returned as a HTTP response, then FastAPI converts it to JSON
 
 @app.post("/ingest")
-def ingest_user_docs(request: AskRequest):
+def ingest_user_docs(request: IngestRequest):
     env = request.env or "prod"
     prefix = f"{env}/users/{request.user_id}/docs/"
 
