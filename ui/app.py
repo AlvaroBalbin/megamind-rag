@@ -34,17 +34,17 @@ BUCKET = st.secrets["S3_BUCKET_NAME"]
 APP_ENV = st.secrets["APP_ENV"]
 
 st.subheader("Upload documents")
-uploaded_file = st.file_uploader("Drop PDF / MD / TXT ",
+uploaded_files = st.file_uploader("Drop PDF / MD / TXT ",
     type=['pdf', 'md', 'txt'], accept_multiple_files=True)
 
 if "indexed_files" not in st.session_state: # mini dictionary by streamlit to remember for reruns
     st.session_state.indexed_files = []
 
-if uploaded_file is not None:
+if uploaded_files is not None:
     # save file to docs
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    for i in len(uploaded_file):
-        key = f"{APP_ENV}/users/{user_id}/docs/{ts}-{uploaded_file[i].name}"
+    for uploaded_file in uploaded_files:
+        key = f"{APP_ENV}/users/{user_id}/docs/{ts}-{uploaded_file.name}"
 
     
     s3.upload_fileobj(uploaded_file, BUCKET, key)
