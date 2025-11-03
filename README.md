@@ -6,7 +6,8 @@ Upload PDFs, Markdown, or text files → automatically chunk, embed, index, and 
 ## Live Demo
 - **Frontend:** [https://megamind-rag.streamlit.app](https://megamind-rag.streamlit.app)  
 - **Backend:** [https://megamind-rag.onrender.com/docs](https://megamind-rag.onrender.com/docs)
-- **YouTube Demo:** [https://youtu.be/lucUFWEMDYA](https://youtu.be/lucUFWEMDYA)
+  
+[![Watch the Demo](https://img.youtube.com/vi/lucUFWEMDYA/0.jpg)](https://youtu.be/lucUFWEMDYA)
 
 
 ## System Overview
@@ -57,4 +58,5 @@ Streamlit UI → FastAPI Backend → AWS S3 → FAISS Index → OpenAI Embedding
 
 **Alvaro Balbin** — for programming everything.  
 **Gen AI** — for writing this README (but not the ideas in it, just polishing)
+
 
