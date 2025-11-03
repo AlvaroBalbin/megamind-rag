@@ -37,32 +37,37 @@ retriever = None
 llm = None
 
 # lazy loadings more effective
-def get_pipeline():
+def get_pipeline(user_id: str, env: str):
     global embedder, store, retriever, llm
     if embedder is None:
         embedder = Embedder()
 
-    if store is None:
-        # use env so dont try to read MASSIVE local files
-        index_dir = os.getenv("INDEX_DIR", "data")
-        s = StoreKnowledge(
-            index_path=f"{index_dir}/faiss.index",
-            chunks_path=f"{index_dir}/chunks.jsonl",
-        )
-
-        try:
-            s.load()
-            print("[MAIN] store loaded in a lazy way")
-        except Exception as e:
-            print(f"[main] store not loaded yet: {e}")
-        store = s
-
-    if retriever is None:
-            retriever = Retriever(store=store, embedder=embedder, top_k=3)
-
     if llm is None:
-            llm = LLMProvider()
+        llm = LLMProvider()
 
+    local_dir = f"/tmp/{env}-{user_id}"
+    os.makedirs(local_dir, exist_ok=True)
+    local_index_path = os.path.join(local_dir, "faiss.index")
+    local_chunks_path = os.path.join(local_dir, "chunks.jsonl")
+
+    if not (os.path.exists(local_index_path) and os.path.exists(local_chunks_path)):
+        prefix = f"{env}/users/{user_id}/indexes/"
+        resp = s3.list_objects_v2(Bucket=S3_BUCKET_NAME, Prefix=prefix)
+        for obj in resp.get("Contents", []):
+            key = obj["Key"]
+            if key.endswith("/"):
+                continue
+            fname = os.path.basename(key)
+            s3.download_file(S3_BUCKET_NAME, key, os.path.join(local_dir, fname))
+
+    # now we expect those 2 files to exist
+    store = StoreKnowledge(
+        index_path=local_index_path,
+        chunks_path=local_chunks_path,
+    )
+    store.load()
+
+    retriever = Retriever(store=store, embedder=embedder, top_k=3)
     return retriever, llm
 
 """you load your embedding model ONCE not every request
@@ -101,7 +106,8 @@ def health_check():
 
 @app.post("/ask")
 def ask(request: AskRequest):
-    retriever, llm = get_pipeline()
+    env = request.env or "prod"
+    retriever, llm = get_pipeline(request.user_id, env)
     response = answer_question(question=request.question, retriever=retriever, llm=llm)
     return response
 # fast api turns JSON request into Python object of type AskRequest
@@ -146,21 +152,12 @@ def ingest_user_docs(request: AskRequest):
         ingest.run_ingest(docs_dir=tmp_docs_dir, out_dir=tmp_out_dir)
 
         # copy the information to permanent memory
-        perm_direct = "data"
-        os.makedirs(perm_direct, exist_ok=True)
-        for filename in os.listdir(tmp_docs_dir):
-            src = os.path.join(tmp_docs_dir, filename)
-            dest = os.path.join(perm_direct, filename)
-            with open(src, "rb") as filesource, open(dest, "wb") as filedest:
-                filedest.write(filesource.read())
+        index_prefix = f"{env}/users/{request.user_id}/indexes/"
+        for filename in os.listdir(tmp_out_dir):
+            full_path = os.path.join(tmp_out_dir, filename)
+            s3.upload_file(full_path, S3_BUCKET_NAME, index_prefix + filename)
 
-        global store, retriever
-        store = StoreKnowledge(
-            index_path=f"{perm_direct}/faiss.index",
-            chunks_path=f"{perm_direct}/chunks.jsonl",
-        )
-        store.load() # load function
-        retriever = Retriever(store=store, embedder=embedder, top_k=3)
-
-    return {"status": "ok", "message": f"ingestion completed for {request.user_id}"}
+    return {"status": "ok", "message": f"ingestion completed for {request.user_id}",
+            "indexes_prefix": index_prefix,
+            }
 
