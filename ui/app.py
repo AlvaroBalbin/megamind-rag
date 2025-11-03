@@ -50,6 +50,19 @@ if uploaded_files is not None:
         s3.upload_fileobj(uploaded_file, BUCKET, key)
         st.success(f"Uploaded to S3: {key}")
 
+if st.button("Nuke session & clear uploads", type="secondary"):
+    # clear Streamlit session state
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+
+    # clear the file_uploader cache
+    st.cache_data.clear()
+    st.cache_resource.clear()
+
+    st.success("Session cleared. You can reupload new files.")
+    st.stop()  # stop execution so the page reruns cleanly
+
+
 st.caption(f"Indexed files: {st.session_state.indexed_files}")
 
 if st.button("Ingest docs from the S3"):
