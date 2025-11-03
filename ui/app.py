@@ -35,7 +35,7 @@ APP_ENV = st.secrets["APP_ENV"]
 
 st.subheader("Upload documents")
 uploaded_file = st.file_uploader("Drop PDF / MD / TXT ",
-    type=['pdf', 'md', 'txt'],)
+    type=['pdf', 'md', 'txt'], accept_multiple_files=True)
 
 if "indexed_files" not in st.session_state: # mini dictionary by streamlit to remember for reruns
     st.session_state.indexed_files = []
