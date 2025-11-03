@@ -49,23 +49,22 @@ if uploaded_file is not None:
     s3.upload_fileobj(uploaded_file, BUCKET, key)
     st.success(f"Uploaded to S3: {key}")
 
-    backend_url = BACKEND_URL
-    r = None
-    try:
-        r = requests.post(
-            f"{BACKEND_URL}/ingest",
-            json={"user_id": user_id, "env": APP_ENV},
-            timeout=30,
-        )
-        if not r.ok:
-            st.error(f"Ingest failed: {r.status_code} {r.text}")
-        else:
-            st.success("Ingest triggered on backend")
-    except Exception as e:
-        st.warning(f"Could not connect to backend for ingestion: {e}")
-
-
 st.caption(f"Indexed files: {st.session_state.indexed_files}")
+
+st.button("Ingest docs from the S3")
+try:
+    r = requests.post(
+        f"{BACKEND_URL}/ingest",
+        json={"user_id": user_id, "env": APP_ENV},
+        timeout=30,
+    )
+    if r.ok:
+        st.success("Ingestion triggered on backend ✅")
+    else:
+        st.error(f"Ingest failed: {r.status_code} {r.text}")
+except Exception as e:
+    st.error(f"Could not reach backend: {e}")
+    
 
 st.subheader("S3 objects for this user")
 user_id = "default_user"
@@ -73,26 +72,31 @@ docs_prefix = f"{APP_ENV}/users/{user_id}/docs/"
 indexes_prefix = f"{APP_ENV}/users/{user_id}/indexes/"
 
 # list docs
-docs_resp = s3.list_objects_v2(Bucket=BUCKET, Prefix=docs_prefix)
-docs = [obj["Key"] for obj in docs_resp.get("Contents", []) if not obj["Key"].endswith("/")]
-contents = docs_resp.get("Contents", [])
-if not contents:
-    raise HTTPException(
-        status_code=404,
-        detail=f"no index found for user: {user_id}, prefix:{docs_prefix}"
-    )
+with st.expander("Docs in S3", expanded=False):
+    docs_resp = s3.list_objects_v2(Bucket=BUCKET, Prefix=docs_prefix)
+    docs = [
+        obj["Key"]
+        for obj in docs_resp.get("Contents", [])
+        if not obj["Key"].endswith("/")
+    ]
+    if not docs:
+        st.write("No docs yet.")
+    else:
+        for key in docs:
+            st.write("-", key)
 
-st.write("Docs in S3:")
-for key in docs:
-    st.write("-", key)
-
-# list indexes
-idx_resp = s3.list_objects_v2(Bucket=BUCKET, Prefix=indexes_prefix)
-idxs = [obj["Key"] for obj in idx_resp.get("Contents", []) if not obj["Key"].endswith("/")]
-
-st.write("Index files in S3:")
-for key in idxs:
-    st.write("-", key)
+with st.expander("index files in S3", expanded=False):
+    idx_resp = s3.list_objects_v2(Bucket=BUCKET, Prefix=indexes_prefix)
+    idxs = [
+        obj["Key"]
+        for obj in idx_resp.get("Contents", [])
+        if not obj["Key"].endswith("/")
+    ]
+    if not idxs:
+        st.write("No indexes yet. Click **Ingest** above.")
+    else:
+        for key in idxs:
+            st.write("-", key)
 
 # place a widget to input your question
 question = st.text_input(label="Ask a question:")
