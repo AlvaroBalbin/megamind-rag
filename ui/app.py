@@ -33,14 +33,19 @@ user_id = "default_user" # figure it out later with authentication
 BUCKET = st.secrets["S3_BUCKET_NAME"]
 APP_ENV = st.secrets["APP_ENV"]
 
+if "uploader_key" not in st.session_state: # do this so that files dont keep getting reuploaded all the time
+    st.session_state.uploader_key = 0
+
 st.subheader("Upload documents")
 uploaded_files = st.file_uploader("Drop PDF / MD / TXT ",
-    type=['pdf', 'md', 'txt'], accept_multiple_files=True)
+    type=['pdf', 'md', 'txt'], accept_multiple_files=True, 
+    key=f"file_uploader_{st.session_state.uploader_key}", # have key uploaded
+)
 
 if "indexed_files" not in st.session_state: # mini dictionary by streamlit to remember for reruns
     st.session_state.indexed_files = []
 
-if uploaded_files is not None:
+if uploaded_files and st.button("Upload to S3"):
     # save file to docs
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     for uploaded_file in uploaded_files:
@@ -49,6 +54,10 @@ if uploaded_files is not None:
     
         s3.upload_fileobj(uploaded_file, BUCKET, key)
         st.success(f"Uploaded to S3: {key}")
+
+    # now reset uploader so files dont appear and dont re run on reupload
+    st.session_state.uploader_key += 1
+    st.rerun() # have it rerun so it resets nicely from the top
 
 
 st.caption(f"Indexed files: {st.session_state.indexed_files}")
