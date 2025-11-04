@@ -1,6 +1,6 @@
 # MegaMind-RAG  
 **A fully online Retrieval-Augmented Generation (RAG) system with Streamlit frontend and FastAPI backend.**  
-Upload PDFs, Markdown, or text files → automatically chunk, embed, index, and query them semantically — all in the cloud.
+Upload PDFs, Markdown, or text files → automatically chunk, embed, index, and query them semantically: all in the cloud.
 
 
 ## Live Demo
@@ -56,7 +56,8 @@ Streamlit UI → FastAPI Backend → AWS S3 → FAISS Index → OpenAI Embedding
 - Re-ranking retrieved chunks before LLM query  
 - Domain-tuned embeddings for specialized corpora
 
-**Alvaro Balbin** — for programming everything.  
-**Gen AI** — for writing this README (but not the ideas in it, just polishing)
+**Alvaro Balbin**: for programming everything.  
+**Gen AI**: for writing this README (but not the ideas in it, just polishing)
+
 
 
